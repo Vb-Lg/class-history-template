@@ -2,6 +2,8 @@
 
 一个可直接部署的班级纪念册模板，基于 **Astro 7 + Cloudflare Pages**。
 
+> 📖 **完整文档见 [Wiki](https://github.com/Vb-Lg/class-history-template/wiki)**：[快速开始与定制](https://github.com/Vb-Lg/class-history-template/wiki/Quick-Start) · [内容格式](https://github.com/Vb-Lg/class-history-template/wiki/Content-Format) · [部署](https://github.com/Vb-Lg/class-history-template/wiki/Deployment) · [cms-bot 使用教程](https://github.com/Vb-Lg/class-history-template/wiki/CMS-Bot) · [留言墙（D1）](https://github.com/Vb-Lg/class-history-template/wiki/Message-Board) · [Turnstile](https://github.com/Vb-Lg/class-history-template/wiki/Turnstile)
+
 功能一览：
 
 - 🏠 **首页**：班级简介、人物志、荣誉墙、记忆墙（均为示例文案，可自行替换）
