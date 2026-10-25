@@ -3,8 +3,8 @@ export const prerender = true;
 import { getCollection } from "astro:content";
 import { SITE } from "../site.config";
 
-// 班史列表：src/content/*.md（与首页「班级编年史」同源）
-// 升序排列，序号与文章页「第 N 篇」一致
+// 班史列表：src/content/*.md
+// 按时间倒序展示（最新在前）；序号仍是时间正序的第 N 篇，与文章页一致
 const posts = (await getCollection("chronicle")).sort(
     (a, b) => a.data.date.valueOf() - b.data.date.valueOf(),
 );
@@ -12,17 +12,19 @@ const posts = (await getCollection("chronicle")).sort(
 const pad = (n: number) => String(n).padStart(2, "0");
 const total = posts.length;
 
-const items = posts.map((post, i) => {
-    const d = post.data.date;
-    return {
-        index: i + 1,
-        dateLabel: `${d.getFullYear()} · ${pad(d.getMonth() + 1)} · ${pad(d.getDate())}`,
-        title: post.data.title,
-        summary: post.data.summary,
-        author: post.data.author,
-        url: `/pages/${post.id.split("/").pop()}`,
-    };
-});
+const items = posts
+    .map((post, i) => {
+        const d = post.data.date;
+        return {
+            index: i + 1,
+            dateLabel: `${d.getFullYear()} · ${pad(d.getMonth() + 1)} · ${pad(d.getDate())}`,
+            title: post.data.title,
+            summary: post.data.summary,
+            author: post.data.author,
+            url: `/pages/${post.id.split("/").pop()}`,
+        };
+    })
+    .reverse();
 ---
 
 <html lang="zh-CN">
