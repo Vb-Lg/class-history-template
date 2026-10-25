@@ -153,6 +153,38 @@ function renderMarkdown(f: {
     return `${fm.join('\n')}\n\n${f.body.trim()}\n`;
 }
 
+// ---------- 请求方环境信息（仅写入 PR 描述，不写入仓库文件） ----------
+interface SubmitMeta {
+    ip: string;
+    ua: string;
+    country: string;
+    time: string;
+}
+
+function requestMeta(request: Request): SubmitMeta {
+    const fwd = request.headers.get('X-Forwarded-For')?.split(',')[0]?.trim();
+    return {
+        ip: request.headers.get('CF-Connecting-IP') ?? fwd ?? '',
+        ua: (request.headers.get('User-Agent') ?? '').slice(0, 400),
+        country: request.headers.get('CF-IPCountry') ?? '',
+        time: new Date().toISOString(),
+    };
+}
+
+function metaSection(m: SubmitMeta): string {
+    return [
+        '<details>',
+        '<summary>提交环境信息（仅记录于 PR，未写入仓库文件）</summary>',
+        '',
+        `- **IP：** \`${m.ip || '未知'}\``,
+        `- **User-Agent：** \`${m.ua || '未知'}\``,
+        `- **国家/地区：** \`${m.country || '未知'}\``,
+        `- **提交时间：** \`${m.time}\``,
+        '',
+        '</details>',
+    ].join('\n');
+}
+
 // ---------- 音乐投稿 ----------
 function renderSongJson(f: {
     title: string; artist: string; link?: string;
@@ -171,6 +203,7 @@ function renderSongJson(f: {
 
 async function handleSongSubmit(
     env: Env, fd: FormData, json: (data: unknown, status?: number) => Response,
+    meta: SubmitMeta,
 ): Promise<Response> {
     const title = (fd.get('title') as string | null)?.trim() ?? '';
     const artist = (fd.get('artist') as string | null)?.trim() ?? '';
@@ -259,6 +292,7 @@ async function handleSongSubmit(
         '',
         message ? `**留言：**\n\n${message}` : '',
         '',
+        metaSection(meta),
         '---',
         '由音乐投稿表单自动创建，请审核后合并。',
     ].filter(Boolean).join('\n');
@@ -288,6 +322,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
             headers: { 'content-type': 'application/json; charset=utf-8' },
         });
 
+    const meta = requestMeta(request);
+
     try {
         // 1) 解析 multipart
         const ct = request.headers.get('content-type') || '';
@@ -314,7 +350,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         // 1.7) 音乐投稿分支（type=music）
         const submitType = (fd.get('type') as string | null)?.trim() ?? 'chronicle';
         if (submitType === 'music') {
-            return await handleSongSubmit(env, fd, json);
+            return await handleSongSubmit(env, fd, json, meta);
         }
 
         const title = (fd.get('title') as string | null)?.trim() ?? '';
@@ -449,6 +485,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
             '',
             message ? `**留言：**\n\n${message}` : '',
             '',
+            metaSection(meta),
             '---',
             '由 Astro 投稿表单自动创建，请审核后合并。',
         ].filter(Boolean).join('\n');

@@ -2,7 +2,7 @@
  * Cloudflare Pages Functions
  * GET  /api/messages   → 返回最新留言列表
  * POST /api/messages   → 新增一条留言
- * 依赖绑定：环境变量 DB（D1 数据库）
+ * 依赖绑定：环境变量 DB（D1 数据库，建表语句见 /schema.sql）
  */
 
 const MAX_NAME = 12;
@@ -103,6 +103,9 @@ export async function onRequestPost({ request, env }) {
     request.headers.get('CF-Connecting-IP') ||
     request.headers.get('X-Forwarded-For') ||
     '';
+  // 审计信息：入库保存，但列表接口只返回 id/name/text/time，不会外泄
+  const ua = (request.headers.get('User-Agent') || '').slice(0, 400);
+  const country = request.headers.get('CF-IPCountry') || '';
   const now = Math.floor(Date.now() / 1000);
 
   try {
@@ -130,10 +133,10 @@ export async function onRequestPost({ request, env }) {
     const time = today();
     const res = await env.DB
       .prepare(
-        `INSERT INTO messages (name, text, time, ip, created_at)
-         VALUES (?, ?, ?, ?, ?)`
+        `INSERT INTO messages (name, text, time, ip, ua, country, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
       )
-      .bind(name, text, time, ip, now)
+      .bind(name, text, time, ip, ua, country, now)
       .run();
 
     // 5. 顺手裁剪：只保留最近 500 条，避免无限增长
