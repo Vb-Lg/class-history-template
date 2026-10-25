@@ -2,7 +2,8 @@
  * Cloudflare Pages Functions
  * GET  /api/messages   → 返回最新留言列表
  * POST /api/messages   → 新增一条留言
- * 依赖绑定：环境变量 DB（D1 数据库，建表语句见 /schema.sql）
+ * 依赖绑定：环境变量 DB（D1 数据库）
+ * 表结构由 ensureSchema 在首次访问时自动创建/迁移，无需手动执行 SQL
  */
 
 const MAX_NAME = 12;
@@ -40,6 +41,43 @@ function clean(str, max) {
     .slice(0, max);
 }
 
+/* ---------- 表结构：自动建表/迁移（幂等，旧表缺列时自动补齐） ---------- */
+const SCHEMA_SQL = [
+  `CREATE TABLE IF NOT EXISTS messages (
+     id         INTEGER PRIMARY KEY AUTOINCREMENT,
+     name       TEXT NOT NULL,
+     text       TEXT NOT NULL,
+     time       TEXT NOT NULL,
+     ip         TEXT,
+     ua         TEXT,
+     country    TEXT,
+     created_at INTEGER NOT NULL
+   )`,
+  'ALTER TABLE messages ADD COLUMN ua TEXT',
+  'ALTER TABLE messages ADD COLUMN country TEXT',
+];
+
+let schemaPromise = null;   // 每个 isolate 只迁移一次；失败不缓存，下个请求重试
+
+function ensureSchema(env) {
+  if (!schemaPromise) {
+    schemaPromise = (async () => {
+      for (const sql of SCHEMA_SQL) {
+        try {
+          await env.DB.prepare(sql).run();
+        } catch (err) {
+          // 列已存在时 SQLite 报 duplicate column name，属预期
+          if (!/duplicate column/i.test(String(err && err.message))) throw err;
+        }
+      }
+    })().catch((err) => {
+      schemaPromise = null;
+      throw err;
+    });
+  }
+  return schemaPromise;
+}
+
 /* ---------- OPTIONS（预检） ---------- */
 export async function onRequestOptions() {
   return new Response(null, {
@@ -58,6 +96,8 @@ export async function onRequestGet({ env }) {
   if (!env.DB) return json({ ok: false, error: '数据库未绑定' }, 500);
 
   try {
+    await ensureSchema(env);
+
     const { results } = await env.DB
       .prepare(
         `SELECT id, name, text, time
@@ -109,6 +149,8 @@ export async function onRequestPost({ request, env }) {
   const now = Math.floor(Date.now() / 1000);
 
   try {
+    await ensureSchema(env);
+
     if (ip) {
       const last = await env.DB
         .prepare(
