@@ -961,8 +961,12 @@ footer .small {
     display: none;
 }
 
-/* ★ 空间足够时把整组推到最右；溢出时 auto margin 自动归零，第一项依然从最左侧开始 */
-.topnav > a:first-child {
+/* ★ 空间足够时把整组推到最右；溢出时 auto margin 自动归零，第一项依然从最左侧开始。
+   first-child 带 .nav-cta 的变体必须列出：特异性 (0,3,1) 才能压过下方
+   .topnav a.nav-cta 的 margin-left: 6px（(0,2,1)，源码顺序更靠后），
+   否则 auto 被覆盖、整组按钮塌到左侧。 */
+.topnav > a:first-child,
+.topnav > a.nav-cta:first-child {
     margin-left: auto;
 }
 
