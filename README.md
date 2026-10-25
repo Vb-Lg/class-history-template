@@ -113,20 +113,9 @@ npm run dev        # http://localhost:4321
 ### 留言墙（D1 数据库）
 
 1. Dashboard → Storage & Databases → **D1** → 创建数据库。
-2. 在控制台执行建表：
+2. Pages 项目 → Settings → Functions → **D1 database bindings**，绑定名必须为 **`DB`**。
 
-   ```sql
-   CREATE TABLE IF NOT EXISTS messages (
-       id         INTEGER PRIMARY KEY AUTOINCREMENT,
-       name       TEXT NOT NULL,
-       text       TEXT NOT NULL,
-       time       TEXT NOT NULL,
-       ip         TEXT,
-       created_at INTEGER NOT NULL
-   );
-   ```
-
-3. Pages 项目 → Settings → Functions → **D1 database bindings**，绑定名必须为 **`DB`**。
+表结构无需手动创建：Functions 首次访问时会自动建表，并为旧表自动补齐缺失的列（见 `functions/api/messages.js` 的 `ensureSchema`）。
 
 ### 人机验证（可选，Cloudflare Turnstile）
 
