@@ -40,7 +40,7 @@ npm install
 npm run dev        # http://localhost:4321
 ```
 
-注意：`npm run dev` 只渲染页面，`/api/*` 由 Pages Functions 提供服务，只有线上可用——本地留言墙会显示「加载失败」、投稿提交会报错，属正常现象。需要本地调试 API 时可用 `npx wrangler pages dev`。
+注意：`npm run dev` 只渲染页面，`/api/*` 由 Pages Functions 提供服务，只有线上可用——本地留言墙会显示「加载失败」、投稿提交会报错，属正常现象。需要本地调试 API 时：`npm run build` 后运行 `npx wrangler pages dev dist --d1 DB`，步骤详见 [Wiki · Quick Start](https://github.com/Vb-Lg/class-history-template/wiki/Quick-Start)。
 
 ## 定制班级信息
 
