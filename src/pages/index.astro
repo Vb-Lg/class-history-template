@@ -1,0 +1,256 @@
+---
+// 文章列表已移至 /chronicle（班史列表页），首页编年史区块留空
+import { SITE } from "../site.config";
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{SITE.className} · 班史</title>
+        <link rel="stylesheet" href="/css/index.css" />
+    </head>
+
+    <body>
+        <!-- <Header /> -->
+        <canvas id="stars"></canvas>
+        <div class="glow g1"></div>
+        <div class="glow g2"></div>
+        <div class="glow g3"></div>
+        <div id="progress"></div>
+        <!-- ========== 页眉 ========== -->
+        <header class="topbar" id="topbar">
+            <a class="brand" href="/">
+                <span class="brand-mark">{SITE.brandMark}</span>
+                <span class="brand-text">{SITE.className} · 班史</span>
+            </a>
+
+            <nav class="topnav" aria-label="页面导航">
+                <a class="nav-cta" href="#board">留言</a>
+                <a class="nav-cta" href="/music">♫ 歌单</a>
+                <a class="nav-cta" href="/chronicle">📖 班史列表</a>
+                <a class="nav-cta" href="/contribute">📝 投稿</a>
+            </nav>
+        </header>
+        <div class="wrap">
+            <!-- ========== 首屏 ========== -->
+            <header class="hero">
+                <div class="hero-badge">{SITE.heroBadge}</div>
+                <h1>{SITE.className}</h1>
+                <p class="sub">
+                    <span id="typed"></span><i class="cursor"></i>
+                </p>
+                <div class="hero-line"></div>
+                <a class="hero-cta" href="/chronicle">📖 打开班史列表</a>
+            </header>
+            <!-- ========== 班级简介 ========== -->
+            <section id="about">
+                <div class="container">
+                    <div class="intro-grid">
+                        <div class="intro-text reveal">
+                            <span class="sec-tag">About Us</span>
+                            <h2 class="sec-title">
+                                一间教室，<em>三年光阴</em>
+                            </h2>
+                            <p>
+                                那年秋天，几十个互不相识的名字被写进同一张座位表。风扇转过无数个燥热的午后，黑板擦落下的粉笔灰在阳光里飘成一场小雪。我们从陌生到熟悉，从并肩到并肩。
+                            </p>
+                            <p>
+                                这里有早读时此起彼伏的背书声，有课间十分钟的喧闹与追逐，有考试前互相打气的纸条，也有晚自习窗外那片被灯光照亮的夜色。这些琐碎的日常，后来都成了我们回不去的黄金时代。
+                            </p>
+                            <p>谨以此页，记录 {SITE.className} 走过的每一步。</p>
+                        </div>
+                        <div class="stats reveal">
+                            <div class="stat">
+                                <b data-count={SITE.stats.students}>0</b><span>同 学</span>
+                            </div>
+                            <div class="stat">
+                                <b data-count={SITE.stats.years}>0</b><span>年 时 光</span>
+                            </div>
+                            <div class="stat">
+                                <b data-count={SITE.stats.days}>0</b><span>个 日 夜</span>
+                            </div>
+                            <div class="stat">
+                                <b data-count={SITE.stats.memories}>0</b><span>+ 回 忆</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- ========== 时间轴 ========== -->
+            <section id="timeline">
+                <div class="container">
+                    <div class="reveal">
+                        <span class="sec-tag">Chronicle</span>
+                        <h2 class="sec-title">班级<em>编年史</em></h2>
+                        <p class="sec-desc">
+                            从初见的那一天起，每一段日子都有了名字。
+                        </p>
+                    </div>
+                    <!-- 文章列表已移至 /chronicle，此处留空 -->
+                    <div class="timeline"></div>
+                </div>
+            </section>
+            <!-- ========== 班级人物 ========== -->
+            <section id="people">
+                <div class="container">
+                    <div class="reveal">
+                        <span class="sec-tag">The Crew</span>
+                        <h2 class="sec-title">班级<em>人物志</em></h2>
+                        <p class="sec-desc">那些撑起这个班的人。</p>
+                    </div>
+
+                    <div class="people">
+                        <div class="person reveal">
+                            <div class="avatar">👑</div>
+                            <h3>班长</h3>
+                            <div class="role">CAPTAIN</div>
+                            <p class="quote">"都安静一下，我说个事儿。"</p>
+                        </div>
+                        <div class="person reveal">
+                            <div class="avatar">📚</div>
+                            <h3>学习委员</h3>
+                            <div class="role">STUDY</div>
+                            <p class="quote">"作业收一下，最后一排。"</p>
+                        </div>
+                        <div class="person reveal">
+                            <div class="avatar">🏃</div>
+                            <h3>体育委员</h3>
+                            <div class="role">SPORTS</div>
+                            <p class="quote">"集合！快点儿，别磨蹭！"</p>
+                        </div>
+                        <div class="person reveal">
+                            <div class="avatar">🎨</div>
+                            <h3>文艺委员</h3>
+                            <div class="role">ART</div>
+                            <p class="quote">"这次板报，我们拿第一。"</p>
+                        </div>
+                        <div class="person reveal">
+                            <div class="avatar">🧹</div>
+                            <h3>劳动委员</h3>
+                            <div class="role">DUTY</div>
+                            <p class="quote">"今天值日的是第三组，别忘了。"</p>
+                        </div>
+                        <div class="person reveal">
+                            <div class="avatar">📣</div>
+                            <h3>宣传委员</h3>
+                            <div class="role">MEDIA</div>
+                            <p class="quote">"照片我都存着呢，一张没删。"</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- ========== 荣誉 ========== -->
+            <section id="honor">
+                <div class="container">
+                    <div class="reveal">
+                        <span class="sec-tag">Honors</span>
+                        <h2 class="sec-title">班级<em>荣誉</em></h2>
+                        <p class="sec-desc">属于我们共同的勋章。</p>
+                    </div>
+                    <div class="honors">
+                        <div class="honor reveal">
+                            <div class="medal">🏆</div>
+                            <div>
+                                <h4>校运动会团体总分第一</h4>
+                                <p>20XX · 秋季运动会</p>
+                            </div>
+                        </div>
+                        <div class="honor reveal">
+                            <div class="medal">🥇</div>
+                            <div>
+                                <h4>优秀班集体</h4>
+                                <p>20XX—20XX 学年</p>
+                            </div>
+                        </div>
+                        <div class="honor reveal">
+                            <div class="medal">🎭</div>
+                            <div>
+                                <h4>校园艺术节最佳创意奖</h4>
+                                <p>20XX · 元旦汇演</p>
+                            </div>
+                        </div>
+                        <div class="honor reveal">
+                            <div class="medal">📖</div>
+                            <div>
+                                <h4>经典诵读比赛一等奖</h4>
+                                <p>20XX · 读书节</p>
+                            </div>
+                        </div>
+                        <div class="honor reveal">
+                            <div class="medal">🏀</div>
+                            <div>
+                                <h4>年级篮球赛亚军</h4>
+                                <p>20XX · 春季</p>
+                            </div>
+                        </div>
+                        <div class="honor reveal">
+                            <div class="medal">⭐</div>
+                            <div>
+                                <h4>文明班级 · 三连冠</h4>
+                                <p>连续三个学期</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- ========== 记忆墙 ========== -->
+            <section id="memory">
+                <div class="container">
+                    <div class="reveal">
+                        <span class="sec-tag">Memories</span>
+                        <h2 class="sec-title">班级<em>记忆</em></h2>
+                        <p class="sec-desc">
+                            把这里替换成你们的照片吧 —— 将 &lt;div
+                            class="photo"&gt; 换成 &lt;img&gt; 或背景图即可。
+                        </p>
+                    </div>
+                    <div class="gallery">
+                        <div class="photo reveal"><span>开学第一天</span></div>
+                        <div class="photo reveal"><span>运动会合影</span></div>
+                        <div class="photo reveal"><span>元旦晚会</span></div>
+                        <div class="photo reveal"><span>研学路上</span></div>
+                        <div class="photo reveal"><span>教室里</span></div>
+                        <div class="photo reveal"><span>黑板的字</span></div>
+                        <div class="photo reveal"><span>操场黄昏</span></div>
+                        <div class="photo reveal"><span>毕业照</span></div>
+                    </div>
+                </div>
+            </section>
+            <!-- ========== 留言墙 ========== -->
+            <section id="board">
+                <div class="container">
+                    <div class="reveal">
+                        <span class="sec-tag">Message Board</span>
+                        <h2 class="sec-title">留<em>言</em>墙</h2>
+                        <p class="sec-desc">写下一句话，送给未来的我们。</p>
+                    </div>
+                    <div class="msg-form reveal">
+                        <input
+                            id="msgName"
+                            type="text"
+                            maxlength="12"
+                            placeholder="你的名字"
+                        />
+                        <textarea
+                            id="msgText"
+                            maxlength="120"
+                            placeholder={`想对${SITE.classShort}说点什么……`}></textarea>
+                        <button id="msgSend">留 言</button>
+                    </div>
+                    <div class="msg-list" id="msgList"></div>
+                </div>
+            </section>
+            <!-- ========== 页脚 ========== -->
+            <footer>
+                <div class="sig">{SITE.className} · 永远</div>
+                <p>愿我们都被世界温柔以待，也永远记得这间教室</p>
+                <p class="small">© {SITE.className}班史 · 制作于某个想起你们的夜晚</p>
+            </footer>
+        </div>
+        <button id="top" aria-label="回到顶部">↑</button>
+        <!-- <Footer /> -->
+        <script src="/js/index.js" is:inline></script>
+    </body>
+</html>

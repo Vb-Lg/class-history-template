@@ -1,0 +1,9 @@
+version: 1
+labels:
+  # 班史投稿：chronicle/* 分支（班史投稿表单创建）
+  - label: "班史投稿"
+    branch: "^chronicle/"
+
+  # 音乐投稿：music/* 分支（音乐投稿表单创建）
+  - label: "音乐投稿"
+    branch: "^music/"

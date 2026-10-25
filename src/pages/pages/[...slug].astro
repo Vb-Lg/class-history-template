@@ -1,0 +1,53 @@
+---
+// 动态路由：src/content/*.md → /pages/<文件名去扩展名>
+// 例如 src/content/20250101.md → /pages/20250101
+import { getCollection, render } from 'astro:content';
+import PostLayout from '../../layouts/PostLayout.astro';
+
+export async function getStaticPaths() {
+    const posts = await getCollection('chronicle');
+    const sorted = posts.sort(
+        (a, b) => a.data.date.valueOf() - b.data.date.valueOf()
+    );
+
+    return Promise.all(
+        sorted.map(async (entry, i) => {
+            const slug = entry.id.split('/').pop()!; // 去掉年月目录前缀
+            const prev = i > 0 ? sorted[i - 1] : null;
+            const next = i < sorted.length - 1 ? sorted[i + 1] : null;
+            return {
+                params: { slug },
+                props: {
+                    entry,
+                    index: i,
+                    total: sorted.length,
+                    prev: prev
+                        ? {
+                              url: `/pages/${prev.id.split('/').pop()}`,
+                              title: prev.data.title,
+                          }
+                        : null,
+                    next: next
+                        ? {
+                              url: `/pages/${next.id.split('/').pop()}`,
+                              title: next.data.title,
+                          }
+                        : null,
+                    rendered: await render(entry),
+                },
+            };
+        })
+    );
+}
+
+const { entry, index, total, prev, next, rendered } = Astro.props;
+---
+
+<PostLayout
+    entry={entry}
+    index={index}
+    total={total}
+    prev={prev}
+    next={next}
+    rendered={rendered}
+/>

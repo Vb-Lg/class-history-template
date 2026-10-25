@@ -1,0 +1,864 @@
+---
+export const prerender = true;
+import { SITE } from "../site.config";
+
+// Cloudflare Turnstile 前端 site key（构建时注入，缺失则自动禁用）
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? "";
+const hasTurnstile = turnstileSiteKey.length > 0;
+---
+
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>音乐投稿 · {SITE.className}</title>
+        {
+            hasTurnstile && (
+                <script
+                    is:inline
+                    src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+                    async
+                    defer
+                />
+            )
+        }
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            :root {
+                --bg: #080c17;
+                --panel: rgba(255, 255, 255, 0.045);
+                --panel-hi: rgba(255, 255, 255, 0.08);
+                --line: rgba(230, 192, 104, 0.22);
+                --gold: #e6c068;
+                --gold-soft: #f4e0a8;
+                --blue: #6ea8fe;
+                --text: #e9ecf5;
+                --muted: #96a0b8;
+                --danger: #ff8f8f;
+                --acc: var(--gold);
+                --fg: var(--text);
+                --bd: rgba(255, 255, 255, 0.14);
+                --field-bd: rgba(255, 255, 255, 0.12);
+                --field-bg: rgba(255, 255, 255, 0.03);
+            }
+
+            html {
+                scroll-behavior: smooth;
+            }
+
+            body {
+                background: var(--bg);
+                color: var(--text);
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "PingFang SC",
+                    "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI",
+                    sans-serif;
+                line-height: 1.8;
+                overflow-x: hidden;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            ::selection {
+                background: rgba(230, 192, 104, 0.3);
+                color: #fff;
+            }
+
+            :focus-visible {
+                outline: 2px solid var(--gold);
+                outline-offset: 2px;
+                border-radius: 6px;
+            }
+
+            /* ===== 背景 ===== */
+            #stars {
+                position: fixed;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 0;
+                pointer-events: none;
+            }
+
+            .glow {
+                position: fixed;
+                border-radius: 50%;
+                filter: blur(90px);
+                opacity: 0.35;
+                z-index: 0;
+                pointer-events: none;
+            }
+
+            .glow.g1 {
+                width: 520px;
+                height: 520px;
+                background: #1b3a7a;
+                top: -180px;
+                left: -160px;
+            }
+
+            .glow.g2 {
+                width: 460px;
+                height: 460px;
+                background: #5a3d1a;
+                bottom: -160px;
+                right: -140px;
+            }
+
+            .glow.g3 {
+                width: 380px;
+                height: 380px;
+                background: #123f45;
+                top: 45%;
+                left: 60%;
+                opacity: 0.25;
+            }
+
+            .wrap {
+                position: relative;
+                z-index: 2;
+            }
+
+            /* ===== 顶部进度条 ===== */
+            #progress {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 2px;
+                width: 0;
+                background: linear-gradient(90deg, var(--gold), var(--blue));
+                z-index: 99;
+                transition: width 0.1s linear;
+                box-shadow: 0 0 12px rgba(230, 192, 104, 0.7);
+            }
+
+            /* ===== 顶部导航 ===== */
+            .topbar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 60;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                padding: 14px 28px;
+                background: rgba(8, 12, 23, 0.62);
+                backdrop-filter: blur(14px);
+                -webkit-backdrop-filter: blur(14px);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            }
+
+            .back {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 13.5px;
+                letter-spacing: 0.1em;
+                color: var(--gold);
+                text-decoration: none;
+                padding: 7px 16px;
+                border-radius: 100px;
+                border: 1px solid var(--line);
+                background: rgba(230, 192, 104, 0.05);
+                transition: 0.35s;
+            }
+
+            .back:hover {
+                background: var(--gold);
+                color: #151006;
+                transform: translateX(-3px);
+            }
+
+            .nav-tag {
+                font-size: 12px;
+                letter-spacing: 0.35em;
+                color: var(--muted);
+            }
+
+            .topbar-right {
+                display: inline-flex;
+                align-items: center;
+                gap: 16px;
+            }
+
+            .cross-link {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 13.5px;
+                color: var(--blue);
+                text-decoration: none;
+                padding: 7px 16px;
+                border-radius: 100px;
+                border: 1px solid rgba(110, 168, 254, 0.35);
+                background: rgba(110, 168, 254, 0.06);
+                transition: 0.35s;
+            }
+
+            .cross-link:hover {
+                background: var(--blue);
+                color: #0a1120;
+                transform: translateY(-2px);
+            }
+
+            /* ===== 通用 ===== */
+            main {
+                max-width: 860px;
+                margin: 0 auto;
+                padding: 112px 1rem 90px;
+            }
+
+            h1 {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 0.6rem;
+                font-size: clamp(1.55rem, 4vw, 2.2rem);
+                line-height: 1.35;
+                letter-spacing: 0.02em;
+                color: var(--gold-soft);
+            }
+
+            .sub {
+                margin: 0.7rem 0 2.2rem;
+                font-size: 0.9rem;
+                color: var(--muted);
+            }
+
+            /* ===== 表单结构 ===== */
+            form {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            fieldset {
+                border: 1px solid var(--line);
+                border-radius: 16px;
+                padding: 1.5rem 1.35rem 1.7rem;
+                background: var(--panel);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+            }
+
+            legend {
+                padding: 0 0.6rem;
+                font-size: 0.72rem;
+                letter-spacing: 0.3em;
+                text-transform: uppercase;
+                color: var(--gold);
+            }
+
+            .row {
+                display: flex;
+                flex-direction: column;
+                gap: 0.45rem;
+                margin-bottom: 1rem;
+            }
+
+            .row:last-child {
+                margin-bottom: 0;
+            }
+
+            .grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+
+            .grid > .row {
+                margin-bottom: 0;
+            }
+
+            label {
+                font-size: 0.8rem;
+                letter-spacing: 0.1em;
+                color: var(--muted);
+            }
+
+            label.req::after {
+                content: " *";
+                color: var(--danger);
+            }
+
+            .hint {
+                font-size: 0.72rem;
+                color: var(--muted);
+                opacity: 0.85;
+            }
+
+            /* ===== 输入控件 ===== */
+            input[type="text"],
+            textarea {
+                width: 100%;
+                padding: 0.72rem 0.9rem;
+                border-radius: 10px;
+                border: 1px solid var(--field-bd);
+                background: var(--field-bg);
+                color: var(--text);
+                font: inherit;
+                font-size: 0.92rem;
+                line-height: 1.7;
+                transition:
+                    border-color 0.25s,
+                    background 0.25s,
+                    box-shadow 0.25s;
+            }
+
+            input[type="text"]::placeholder,
+            textarea::placeholder {
+                color: rgba(150, 160, 184, 0.55);
+            }
+
+            input[type="text"]:hover,
+            textarea:hover {
+                border-color: rgba(230, 192, 104, 0.3);
+            }
+
+            input[type="text"]:focus,
+            textarea:focus {
+                outline: none;
+                border-color: var(--gold);
+                background: var(--panel-hi);
+                box-shadow: 0 0 0 3px rgba(230, 192, 104, 0.12);
+            }
+
+            textarea {
+                resize: vertical;
+                min-height: 3.2rem;
+            }
+
+            /* ===== 按钮 / 状态 ===== */
+            button {
+                padding: 0.6rem 1.35rem;
+                border-radius: 100px;
+                border: 1px solid var(--acc);
+                background: var(--acc);
+                color: #151006;
+                font: inherit;
+                font-weight: 600;
+                font-size: 0.88rem;
+                letter-spacing: 0.06em;
+                cursor: pointer;
+                transition: 0.3s;
+            }
+
+            button:hover:not(:disabled) {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 24px rgba(230, 192, 104, 0.25);
+            }
+
+            button.sec {
+                background: transparent;
+                color: var(--muted);
+                border-color: var(--field-bd);
+            }
+
+            button.sec:hover:not(:disabled) {
+                color: var(--text);
+                border-color: rgba(255, 255, 255, 0.3);
+                box-shadow: none;
+            }
+
+            button:disabled {
+                opacity: 0.55;
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+
+            .actions {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 0.8rem;
+            }
+
+            #msg {
+                font-size: 0.85rem;
+                color: var(--muted);
+            }
+
+            #msg a {
+                color: var(--gold);
+            }
+
+            /* ===== 预览 ===== */
+            pre.preview {
+                background: #0b1020;
+                color: #d1e7ff;
+                padding: 0.85rem 1rem;
+                border-radius: 10px;
+                border: 1px solid rgba(255, 255, 255, 0.06);
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                font-size: 0.75rem;
+                line-height: 1.7;
+                white-space: pre-wrap;
+                word-break: break-word;
+                overflow: auto;
+                max-height: 300px;
+                margin: 0;
+            }
+
+            .badge {
+                display: inline-block;
+                font-size: 0.68rem;
+                letter-spacing: 0.12em;
+                padding: 0.12rem 0.55rem;
+                border-radius: 999px;
+                background: rgba(230, 192, 104, 0.12);
+                border: 1px solid var(--line);
+                color: var(--gold);
+                vertical-align: middle;
+            }
+
+            .reveal {
+                opacity: 0;
+                transform: translateY(30px);
+                transition:
+                    opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
+                    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+            }
+
+            .reveal.visible {
+                opacity: 1;
+                transform: none;
+            }
+
+            .turnstile-box {
+                max-width: 420px;
+            }
+
+            .turnstile-box .hint {
+                margin-top: 0.4rem;
+            }
+
+            @media (max-width: 640px) {
+                .grid {
+                    grid-template-columns: 1fr;
+                }
+
+                main {
+                    padding: 96px 0.9rem 70px;
+                }
+
+                fieldset {
+                    padding: 1.2rem 1rem 1.4rem;
+                }
+            }
+
+            @media (max-width: 600px) {
+                .topbar {
+                    padding: 12px 16px;
+                }
+
+                .nav-tag {
+                    display: none;
+                }
+
+                .cross-link {
+                    font-size: 12.5px;
+                    padding: 6px 12px;
+                }
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                html {
+                    scroll-behavior: auto;
+                }
+
+                .reveal {
+                    opacity: 1;
+                    transform: none;
+                    transition: none;
+                }
+
+                button:hover:not(:disabled) {
+                    transform: none;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- 背景元素 -->
+        <canvas id="stars" aria-hidden="true"></canvas>
+        <div class="glow g1" aria-hidden="true"></div>
+        <div class="glow g2" aria-hidden="true"></div>
+        <div class="glow g3" aria-hidden="true"></div>
+        <div id="progress" aria-hidden="true"></div>
+
+        <div class="wrap">
+            <div class="topbar">
+                <a class="back" href="/music">← 返回歌单</a>
+                <div class="topbar-right">
+                    <a class="cross-link" href="/contribute">✍️ 班史投稿</a>
+                    <span class="nav-tag">{SITE.className} · 歌单</span>
+                </div>
+            </div>
+
+            <main>
+                <h1 class="reveal">
+                    音乐投稿 <span class="badge">music</span>
+                </h1>
+                <p class="sub reveal">
+                    推荐一首属于我们班的歌，提交后会以 PR
+                    形式发到仓库，由管理员审核后合并进歌单。
+                </p>
+
+                <!-- data-turnstile 供 JS 判断是否需要校验 -->
+                <form
+                    id="form"
+                    novalidate
+                    data-turnstile={hasTurnstile ? "1" : "0"}
+                >
+                    <fieldset class="reveal">
+                        <legend>歌曲</legend>
+
+                        <input type="hidden" name="type" value="music" />
+
+                        <div class="grid">
+                            <div class="row">
+                                <label class="req" for="title">歌名</label>
+                                <input
+                                    id="title"
+                                    name="title"
+                                    type="text"
+                                    maxlength="200"
+                                    autocomplete="off"
+                                    required
+                                    placeholder="例：起风了"
+                                />
+                            </div>
+                            <div class="row">
+                                <label class="req" for="artist">歌手</label>
+                                <input
+                                    id="artist"
+                                    name="artist"
+                                    type="text"
+                                    maxlength="120"
+                                    autocomplete="off"
+                                    required
+                                    placeholder="例：买辣椒也用券"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <label for="link">播放链接</label>
+                            <input
+                                id="link"
+                                name="link"
+                                type="text"
+                                maxlength="500"
+                                autocomplete="off"
+                                placeholder="网易云 / QQ音乐 / B站 等地址，可留空"
+                            />
+                            <p class="hint">须以 http:// 或 https:// 开头。</p>
+                        </div>
+
+                        <div class="row">
+                            <label for="note">回忆备注</label>
+                            <textarea
+                                id="note"
+                                name="note"
+                                rows="2"
+                                maxlength="500"
+                                placeholder="这首歌和班级的故事，会显示在歌单里，可留空"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <label for="author">推荐人</label>
+                            <input
+                                id="author"
+                                name="author"
+                                type="text"
+                                maxlength="60"
+                                autocomplete="off"
+                                placeholder="你的名字，可留空"
+                            />
+                        </div>
+
+                        <div class="row">
+                            <label for="message">留言</label>
+                            <textarea
+                                id="message"
+                                name="message"
+                                rows="4"
+                                maxlength="2000"
+                                placeholder="在 PR 描述中给管理员的留言，可留空"></textarea>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="reveal">
+                        <legend>
+                            预览
+                            <span class="badge" id="filename">song.json</span>
+                        </legend>
+                        <pre class="preview" id="preview"></pre>
+                    </fieldset>
+
+                    {
+                        hasTurnstile && (
+                            <div class="turnstile-box reveal">
+                                <div
+                                    class="cf-turnstile"
+                                    data-sitekey={turnstileSiteKey}
+                                    data-theme="dark"
+                                    data-language="zh-cn"
+                                    data-size="flexible"
+                                />
+                                <p class="hint">人机验证，提交前需完成。</p>
+                            </div>
+                        )
+                    }
+
+                    <div class="actions reveal">
+                        <button type="submit" id="submit">提交 PR</button>
+                        <button type="button" class="sec" id="resetBtn"
+                            >清空</button
+                        >
+                        <span id="msg" role="status" aria-live="polite"></span>
+                    </div>
+                </form>
+            </main>
+        </div>
+
+        <script is:inline>
+            const $ = (id) => document.getElementById(id);
+            const form = $("form");
+            const msg = $("msg");
+            const preview = $("preview");
+            const filenameEl = $("filename");
+            const submitBtn = $("submit");
+
+            // 是否启用了 Turnstile（由服务端渲染时决定）
+            const HAS_TURNSTILE = form.dataset.turnstile === "1";
+
+            function getTurnstileToken() {
+                const el = form.querySelector(
+                    'input[name="cf-turnstile-response"]',
+                );
+                return el && typeof el.value === "string" ? el.value : "";
+            }
+
+            function resetTurnstile() {
+                if (
+                    window.turnstile &&
+                    typeof window.turnstile.reset === "function"
+                ) {
+                    try {
+                        window.turnstile.reset();
+                    } catch {
+                        /* 忽略：widget 可能还没渲染 */
+                    }
+                }
+            }
+
+            /* ---------- 星空背景 ---------- */
+            (function stars() {
+                const canvas = $("stars");
+                if (!canvas || !canvas.getContext) return;
+                const ctx = canvas.getContext("2d");
+                const reduce = window.matchMedia(
+                    "(prefers-reduced-motion: reduce)",
+                ).matches;
+                let list = [];
+                let raf = null;
+
+                function build() {
+                    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                    const w = window.innerWidth;
+                    const h = window.innerHeight;
+                    canvas.width = Math.round(w * dpr);
+                    canvas.height = Math.round(h * dpr);
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+                    const count = Math.min(220, Math.round((w * h) / 14000));
+                    list = Array.from({ length: count }, () => ({
+                        x: Math.random() * w,
+                        y: Math.random() * h,
+                        r: Math.random() * 1.2 + 0.3,
+                        p: Math.random() * Math.PI * 2,
+                        s: Math.random() * 0.015 + 0.004,
+                    }));
+                    paint();
+                }
+
+                function paint() {
+                    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+                    for (const st of list) {
+                        const a = 0.18 + Math.abs(Math.sin(st.p)) * 0.62;
+                        ctx.beginPath();
+                        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(230, 220, 190, ${a})`;
+                        ctx.fill();
+                    }
+                }
+
+                function loop() {
+                    for (const st of list) st.p += st.s;
+                    paint();
+                    raf = requestAnimationFrame(loop);
+                }
+
+                build();
+                if (reduce) {
+                    paint();
+                } else {
+                    loop();
+                }
+
+                let t;
+                window.addEventListener("resize", () => {
+                    clearTimeout(t);
+                    t = setTimeout(() => {
+                        if (raf) cancelAnimationFrame(raf);
+                        build();
+                        if (!reduce) loop();
+                    }, 150);
+                });
+            })();
+
+            /* ---------- 顶部进度条 ---------- */
+            (function progress() {
+                const bar = $("progress");
+                if (!bar) return;
+                let ticking = false;
+                const update = () => {
+                    const h = document.documentElement;
+                    const max = h.scrollHeight - h.clientHeight;
+                    const p =
+                        max > 0 ? (h.scrollTop || window.scrollY) / max : 0;
+                    bar.style.width = `${Math.min(100, Math.max(0, p * 100))}%`;
+                    ticking = false;
+                };
+                window.addEventListener(
+                    "scroll",
+                    () => {
+                        if (!ticking) {
+                            ticking = true;
+                            requestAnimationFrame(update);
+                        }
+                    },
+                    { passive: true },
+                );
+                update();
+            })();
+
+            /* ---------- 入场动画 ---------- */
+            (function reveal() {
+                const items = document.querySelectorAll(".reveal");
+                if (!items.length) return;
+                if (!("IntersectionObserver" in window)) {
+                    items.forEach((el) => el.classList.add("visible"));
+                    return;
+                }
+                const io = new IntersectionObserver(
+                    (entries) => {
+                        entries.forEach((e) => {
+                            if (e.isIntersecting) {
+                                e.target.classList.add("visible");
+                                io.unobserve(e.target);
+                            }
+                        });
+                    },
+                    { threshold: 0.08, rootMargin: "0px 0px -40px 0px" },
+                );
+                items.forEach((el) => io.observe(el));
+            })();
+
+            /* ---------- 预览 ---------- */
+            function renderPreview() {
+                const fd = new FormData(form);
+                const g = (k) => (fd.get(k) || "").toString().trim();
+
+                const obj = {};
+                const title = g("title");
+                const artist = g("artist");
+                if (title) obj.title = title;
+                if (artist) obj.artist = artist;
+                if (g("link")) obj.link = g("link");
+                if (g("note")) obj.note = g("note");
+                if (g("author")) obj.author = g("author");
+
+                filenameEl.textContent = "song.json";
+                preview.textContent = JSON.stringify(obj, null, 2);
+            }
+
+            form.addEventListener("input", renderPreview);
+            form.addEventListener("change", renderPreview);
+            renderPreview();
+
+            $("resetBtn").addEventListener("click", () => {
+                form.reset();
+                renderPreview();
+                msg.textContent = "";
+                msg.removeAttribute("data-state");
+                // 重置验证，让用户拿到新 token
+                if (HAS_TURNSTILE) resetTurnstile();
+            });
+
+            function fail(t) {
+                msg.textContent = "❌ " + t;
+                msg.dataset.state = "error";
+            }
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                msg.textContent = "";
+                msg.removeAttribute("data-state");
+
+                // 客户端校验（和服务端一致）
+                const fd = new FormData(form);
+                if (!fd.get("title")?.toString().trim())
+                    return fail("歌名不能为空");
+                if (!fd.get("artist")?.toString().trim())
+                    return fail("歌手不能为空");
+                const link = fd.get("link")?.toString().trim();
+                if (link && !/^https?:\/\//i.test(link))
+                    return fail("链接必须以 http:// 或 https:// 开头");
+
+                // Turnstile：确保拿到 token
+                if (HAS_TURNSTILE && !getTurnstileToken()) {
+                    return fail("请先完成人机验证");
+                }
+
+                submitBtn.disabled = true;
+                msg.textContent = "提交中…";
+                try {
+                    const res = await fetch("/api/submit", {
+                        method: "POST",
+                        body: fd,
+                    });
+                    const j = await res.json().catch(() => ({}));
+                    if (!res.ok)
+                        throw new Error(j.error || `HTTP ${res.status}`);
+
+                    msg.textContent = "✅ 已创建 PR：";
+                    const a = document.createElement("a");
+                    a.href = j.prUrl || "#";
+                    a.target = "_blank";
+                    a.rel = "noreferrer";
+                    a.textContent = `#${j.number ?? ""}`;
+                    msg.appendChild(a);
+                    msg.dataset.state = "ok";
+
+                    form.reset();
+                    renderPreview();
+                } catch (err) {
+                    fail(err.message || "未知错误");
+                } finally {
+                    submitBtn.disabled = false;
+                    // token 是一次性的，无论成功失败都要刷新
+                    if (HAS_TURNSTILE) resetTurnstile();
+                }
+            });
+        </script>
+    </body>
+</html>

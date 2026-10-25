@@ -1,0 +1,541 @@
+---
+export const prerender = true;
+import { getCollection } from "astro:content";
+import { SITE } from "../site.config";
+
+// 歌单完全来自投稿：src/songs/*.json（投稿 PR 合并后自动显示）
+type Song = {
+    title: string;
+    artist: string;
+    note?: string;
+    link?: string;
+    author?: string;
+};
+
+let songs: Song[] = [];
+try {
+    songs = (await getCollection("songs"))
+        .sort((a, b) => (b.data.date ?? "").localeCompare(a.data.date ?? ""))
+        .map((e) => ({
+            title: e.data.title,
+            artist: e.data.artist,
+            note: e.data.note,
+            link: e.data.link,
+            author: e.data.author,
+        }));
+} catch {
+    // 目录还不存在或为空时忽略（目录不存在时 glob loader 也可能抛错）
+    songs = [];
+}
+
+const total = songs.length;
+
+// 随机抽取用的数据（静态预渲染，直接内联 JSON 给浏览器）
+// 转义 "<" ，避免歌名/备注里出现脚本结束标签时提前闭合 script
+const songsJson = JSON.stringify(songs).replace(/</g, "\\u003c");
+---
+
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>班级歌单 · {SITE.className}</title>
+        <link rel="stylesheet" href="/css/pages.css" />
+        <style>
+            .song-list {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            .song {
+                display: flex;
+                align-items: center;
+                gap: 18px;
+                padding: 18px 20px;
+                border: 1px solid rgba(230, 192, 104, 0.16);
+                border-radius: 14px;
+                background: rgba(255, 255, 255, 0.035);
+                margin-bottom: 14px;
+                transition:
+                    transform 0.25s ease,
+                    border-color 0.25s ease,
+                    background 0.25s ease;
+            }
+            .song:hover {
+                transform: translateX(6px);
+                border-color: rgba(230, 192, 104, 0.45);
+                background: rgba(255, 255, 255, 0.06);
+            }
+            .song .no {
+                font-size: 0.85rem;
+                color: var(--muted, #96a0b8);
+                font-variant-numeric: tabular-nums;
+                min-width: 2.2em;
+                text-align: right;
+            }
+            .song .info {
+                flex: 1;
+                min-width: 0;
+            }
+            .song .t {
+                font-size: 1.05rem;
+                color: var(--text, #e9ecf5);
+                font-weight: 600;
+            }
+            .song .a {
+                font-size: 0.85rem;
+                color: var(--muted, #96a0b8);
+                margin-left: 10px;
+            }
+            .song .n {
+                font-size: 0.85rem;
+                color: var(--gold-soft, #f4e0a8);
+                margin-top: 4px;
+            }
+            .song .by {
+                font-size: 0.78rem;
+                color: var(--muted, #96a0b8);
+                margin-top: 2px;
+            }
+            .song .by::before {
+                content: "🎧 推荐：";
+                opacity: 0.8;
+            }
+            .song .play {
+                font-size: 0.8rem;
+                color: var(--gold, #e6c068);
+                text-decoration: none;
+                border: 1px solid rgba(230, 192, 104, 0.35);
+                padding: 4px 12px;
+                border-radius: 999px;
+                white-space: nowrap;
+                transition: background 0.2s ease;
+            }
+            .song .play:hover {
+                background: rgba(230, 192, 104, 0.15);
+            }
+            .song.reveal {
+                opacity: 0;
+                transform: translateX(24px);
+                transition:
+                    opacity 0.55s ease,
+                    transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1),
+                    border-color 0.25s ease,
+                    background 0.25s ease;
+            }
+            .song.reveal.visible {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .song.reveal {
+                    opacity: 1;
+                    transform: none;
+                    transition: none;
+                }
+            }
+            .empty {
+                color: var(--muted, #96a0b8);
+                text-align: center;
+                padding: 40px 0;
+            }
+
+            /* ===== 随机抽取 ===== */
+            .draw-bar {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 14px;
+                flex-wrap: wrap;
+                margin-top: 22px;
+            }
+            .draw-btn {
+                font: inherit;
+                font-size: 0.95rem;
+                font-weight: 600;
+                color: #241a05;
+                background: linear-gradient(135deg, #f4e0a8, #e6c068 55%, #d3a94b);
+                border: none;
+                border-radius: 999px;
+                padding: 10px 26px;
+                cursor: pointer;
+                box-shadow: 0 10px 26px rgba(230, 192, 104, 0.25);
+                transition:
+                    transform 0.2s ease,
+                    box-shadow 0.2s ease,
+                    filter 0.2s ease;
+            }
+            .draw-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 14px 32px rgba(230, 192, 104, 0.38);
+                filter: brightness(1.05);
+            }
+            .draw-btn:active {
+                transform: translateY(0);
+            }
+            .draw-btn:focus-visible {
+                outline: 2px solid var(--gold-soft, #f4e0a8);
+                outline-offset: 3px;
+            }
+            .draw-tip {
+                font-size: 0.82rem;
+                color: var(--muted, #96a0b8);
+            }
+            .draw-tip kbd {
+                font-family: inherit;
+                font-size: 0.75rem;
+                color: var(--gold-soft, #f4e0a8);
+                border: 1px solid rgba(230, 192, 104, 0.4);
+                border-bottom-width: 2px;
+                border-radius: 5px;
+                padding: 1px 6px;
+            }
+            .shuffle-tip {
+                margin-top: 14px;
+                text-align: center;
+                font-size: 0.82rem;
+                color: var(--muted, #96a0b8);
+            }
+            .shuffle-tip #shuffle-day {
+                color: var(--gold-soft, #f4e0a8);
+                font-variant-numeric: tabular-nums;
+            }
+
+            .draw-dialog {
+                border: none;
+                padding: 0;
+                background: transparent;
+                color: var(--text, #e9ecf5);
+                /* pages.css 的 * { margin: 0 } 覆盖了浏览器给弹窗的 margin: auto，
+                   会让 inset: 0 的弹窗贴到左上角，这里显式补回以保持居中 */
+                position: fixed;
+                inset: 0;
+                margin: auto;
+                width: min(92vw, 460px);
+                max-width: 460px;
+                /* 高度按内容收缩，配合 margin:auto 才能真正上下居中 */
+                height: fit-content;
+                overflow: visible;
+            }
+            .draw-dialog::backdrop {
+                background: rgba(4, 7, 14, 0.72);
+                backdrop-filter: blur(3px);
+            }
+            .draw-card {
+                text-align: center;
+                padding: 30px 26px 22px;
+                border: 1px solid rgba(230, 192, 104, 0.35);
+                border-radius: 20px;
+                background:
+                    radial-gradient(
+                        120% 100% at 50% 0%,
+                        rgba(230, 192, 104, 0.14),
+                        transparent 60%
+                    ),
+                    linear-gradient(160deg, #171b2b, #0d1020);
+                box-shadow: 0 26px 70px rgba(0, 0, 0, 0.62);
+                /* 屏幕很矮时在卡片内部滚动，弹窗本身保持居中且不裁掉外阴影 */
+                max-height: calc(100vh - 24px);
+                overflow: auto;
+                overscroll-behavior: contain;
+                scrollbar-width: thin;
+            }
+            .draw-dialog.open-in .draw-card {
+                animation: drawIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1);
+            }
+            .draw-eyebrow {
+                font-size: 0.72rem;
+                letter-spacing: 0.3em;
+                text-transform: uppercase;
+                color: var(--gold, #e6c068);
+                opacity: 0.85;
+            }
+            .draw-song {
+                margin: 12px 0 6px;
+                font-size: 1.45rem;
+                line-height: 1.4;
+                color: var(--text, #e9ecf5);
+                word-break: break-word;
+                transition:
+                    opacity 0.15s ease,
+                    filter 0.15s ease;
+            }
+            .draw-artist {
+                font-size: 0.9rem;
+                color: var(--muted, #96a0b8);
+            }
+            .draw-note {
+                margin-top: 12px;
+                font-size: 0.85rem;
+                color: var(--gold-soft, #f4e0a8);
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+            .draw-by {
+                margin-top: 6px;
+                font-size: 0.78rem;
+                color: var(--muted, #96a0b8);
+            }
+            .draw-by::before {
+                content: "🎧 推荐：";
+                opacity: 0.8;
+            }
+            .draw-dialog.rolling .draw-song {
+                opacity: 0.75;
+                filter: blur(1px);
+            }
+            .draw-dialog.pop {
+                animation: drawPop 0.46s cubic-bezier(0.2, 1.3, 0.4, 1);
+            }
+            .draw-actions {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-top: 22px;
+            }
+            .draw-actions .play {
+                font-size: 0.8rem;
+                color: var(--gold, #e6c068);
+                text-decoration: none;
+                border: 1px solid rgba(230, 192, 104, 0.4);
+                padding: 6px 14px;
+                border-radius: 999px;
+                transition: background 0.2s ease;
+            }
+            .draw-actions .play:hover {
+                background: rgba(230, 192, 104, 0.15);
+            }
+            .draw-actions button {
+                font: inherit;
+                font-size: 0.8rem;
+                padding: 6px 14px;
+                border-radius: 999px;
+                cursor: pointer;
+                transition:
+                    background 0.2s ease,
+                    border-color 0.2s ease,
+                    color 0.2s ease;
+            }
+            .draw-actions .primary {
+                color: #241a05;
+                font-weight: 600;
+                background: linear-gradient(135deg, #f4e0a8, #e6c068);
+                border: 1px solid transparent;
+            }
+            .draw-actions .primary:hover {
+                filter: brightness(1.06);
+            }
+            .draw-actions .ghost {
+                color: var(--muted, #96a0b8);
+                background: transparent;
+                border: 1px solid rgba(150, 160, 184, 0.35);
+            }
+            .draw-actions .ghost:hover {
+                color: var(--text, #e9ecf5);
+                border-color: rgba(150, 160, 184, 0.7);
+            }
+            .draw-actions button:focus-visible {
+                outline: 2px solid var(--gold-soft, #f4e0a8);
+                outline-offset: 2px;
+            }
+            .draw-hint {
+                margin-top: 16px;
+                font-size: 0.72rem;
+                color: var(--muted, #96a0b8);
+                opacity: 0.75;
+            }
+            .draw-dialog [hidden] {
+                display: none !important;
+            }
+            .sr-only {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                margin: -1px;
+                padding: 0;
+                border: 0;
+                overflow: hidden;
+                clip-path: inset(50%);
+                white-space: nowrap;
+            }
+            .song.flash {
+                border-color: rgba(230, 192, 104, 0.85);
+                background: rgba(230, 192, 104, 0.12);
+                animation: flashGlow 1.8s ease;
+            }
+            @keyframes drawIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(14px) scale(0.97);
+                }
+                to {
+                    opacity: 1;
+                    transform: none;
+                }
+            }
+            @keyframes drawPop {
+                0% {
+                    transform: scale(1);
+                }
+                45% {
+                    transform: scale(1.035);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+            @keyframes flashGlow {
+                0%,
+                100% {
+                    box-shadow: 0 0 0 rgba(230, 192, 104, 0);
+                }
+                35% {
+                    box-shadow: 0 0 26px rgba(230, 192, 104, 0.45);
+                }
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .draw-dialog.open-in .draw-card,
+                .draw-dialog.pop,
+                .song.flash {
+                    animation: none;
+                }
+            }
+        </style>
+    </head>
+
+    <body>
+        <canvas id="stars"></canvas>
+        <div class="glow g1"></div>
+        <div class="glow g2"></div>
+        <div class="glow g3"></div>
+        <div id="progress"></div>
+
+        <!-- 顶部导航 -->
+        <div class="topbar">
+            <a class="back" href="/">← 返回班史</a>
+            <span class="nav-tag">{SITE.className} · 歌单</span>
+            <a class="back" href="/music-contribute">🎵 投稿音乐</a>
+        </div>
+
+        <div class="wrap">
+            <header class="post-head container">
+                <div class="post-date">MUSIC · PLAYLIST</div>
+                <h1>班级歌单</h1>
+                <p class="post-sub">
+                    那些在教室里循环过的旋律，共 {total} 首
+                </p>
+                {
+                    total > 0 && (
+                        <div class="draw-bar">
+                            <button id="draw-btn" class="draw-btn" type="button">
+                                🎲 随机抽一首
+                            </button>
+                            <span class="draw-tip">
+                                不知道听什么？交给随机 · 也可按 <kbd>R</kbd>
+                            </span>
+                        </div>
+                    )
+                }
+                {
+                    total > 1 && (
+                        <p id="shuffle-tip" class="shuffle-tip" hidden>
+                            🔀 歌曲顺序每天随机一次 · 今日排序：<span
+                                id="shuffle-day"></span>
+                        </p>
+                    )
+                }
+                <div class="head-line"></div>
+            </header>
+
+            <main class="container">
+                {
+                    songs.length > 0 ? (
+                        <ol class="song-list">
+                            {songs.map((s, i) => (
+                                <li class="song reveal" data-index={i}>
+                                    <span class="no">
+                                        {String(i + 1).padStart(2, "0")}
+                                    </span>
+                                    <div class="info">
+                                        <div>
+                                            <span class="t">{s.title}</span>
+                                            <span class="a">{s.artist}</span>
+                                        </div>
+                                        {s.note && <div class="n">{s.note}</div>}
+                                        {s.author && <div class="by">{s.author}</div>}
+                                    </div>
+                                    {s.link && (
+                                        <a
+                                            class="play"
+                                            href={s.link}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            ♫ 播放
+                                        </a>
+                                    )}
+                                </li>
+                            ))}
+                        </ol>
+                    ) : (
+                        <p class="empty">歌单还是空的，快去投稿吧～</p>
+                    )
+                }
+            </main>
+
+            <!-- 随机抽取结果 -->
+            <dialog
+                id="draw-dialog"
+                class="draw-dialog"
+                aria-labelledby="draw-song"
+            >
+                <div class="draw-card">
+                    <div class="draw-eyebrow">随机抽取</div>
+                    <h2 id="draw-song" class="draw-song">—</h2>
+                    <div id="draw-artist" class="draw-artist"></div>
+                    <p id="draw-note" class="draw-note" hidden></p>
+                    <p id="draw-by" class="draw-by" hidden></p>
+                    <div class="draw-actions">
+                        <a
+                            id="draw-play"
+                            class="play"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            hidden>♫ 播放</a
+                        >
+                        <button id="draw-locate" class="ghost" type="button">
+                            在歌单中查看
+                        </button>
+                        <button id="draw-again" class="primary" type="button">
+                            再抽一次
+                        </button>
+                        <button id="draw-close" class="ghost" type="button">
+                            关闭
+                        </button>
+                    </div>
+                    <p class="draw-hint">按 R 换一首 · Esc 关闭</p>
+                    <p id="draw-announce" class="sr-only" aria-live="polite"></p>
+                </div>
+            </dialog>
+
+            <footer>
+                <div class="sig">{SITE.className} · 永远</div>
+                <p>愿我们都被世界温柔以待，也永远记得这间教室</p>
+                <p class="small">© {SITE.className}班史 · 制作于某个想起你们的夜晚</p>
+            </footer>
+        </div>
+
+        <script
+            type="application/json"
+            id="songs-data"
+            set:html={songsJson}
+        ></script>
+        <!-- 先按当天顺序重排歌单，再启动 pages.js 的入场观察，
+             否则观察者会先按旧顺序放出一批动画，重排后就乱序了 -->
+        <script is:inline src="/js/music-shuffle.js"></script>
+        <script is:inline src="/js/pages.js"></script>
+        <script is:inline src="/js/music-random.js"></script>
+    </body>
+</html>

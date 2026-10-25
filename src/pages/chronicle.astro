@@ -1,0 +1,206 @@
+---
+export const prerender = true;
+import { getCollection } from "astro:content";
+import { SITE } from "../site.config";
+
+// 班史列表：src/content/*.md（与首页「班级编年史」同源）
+// 升序排列，序号与文章页「第 N 篇」一致
+const posts = (await getCollection("chronicle")).sort(
+    (a, b) => a.data.date.valueOf() - b.data.date.valueOf(),
+);
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const total = posts.length;
+
+const items = posts.map((post, i) => {
+    const d = post.data.date;
+    return {
+        index: i + 1,
+        dateLabel: `${d.getFullYear()} · ${pad(d.getMonth() + 1)} · ${pad(d.getDate())}`,
+        title: post.data.title,
+        summary: post.data.summary,
+        author: post.data.author,
+        url: `/pages/${post.id.split("/").pop()}`,
+    };
+});
+---
+
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>班史列表 · {SITE.className}</title>
+        <link rel="stylesheet" href="/css/pages.css" />
+        <style>
+            .post-list {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+            .post-item {
+                margin-bottom: 14px;
+            }
+            .post-link {
+                display: flex;
+                align-items: center;
+                gap: 18px;
+                padding: 18px 20px;
+                border: 1px solid rgba(230, 192, 104, 0.16);
+                border-radius: 14px;
+                background: rgba(255, 255, 255, 0.035);
+                text-decoration: none;
+                transition:
+                    transform 0.25s ease,
+                    border-color 0.25s ease,
+                    background 0.25s ease;
+            }
+            .post-link:hover {
+                transform: translateX(6px);
+                border-color: rgba(230, 192, 104, 0.45);
+                background: rgba(255, 255, 255, 0.06);
+            }
+            .post-link .no {
+                font-size: 0.85rem;
+                color: var(--muted, #96a0b8);
+                font-variant-numeric: tabular-nums;
+                min-width: 2.2em;
+                text-align: right;
+            }
+            .post-link .info {
+                flex: 1;
+                min-width: 0;
+            }
+            .post-link .date {
+                font-size: 0.78rem;
+                letter-spacing: 0.18em;
+                color: var(--gold, #e6c068);
+                margin-bottom: 2px;
+            }
+            .post-link .t {
+                font-size: 1.05rem;
+                color: var(--text, #e9ecf5);
+                font-weight: 600;
+            }
+            .post-link .s {
+                font-size: 0.85rem;
+                color: var(--muted, #96a0b8);
+                margin-top: 4px;
+            }
+            .post-link .by {
+                font-size: 0.78rem;
+                color: var(--muted, #96a0b8);
+                margin-top: 2px;
+            }
+            .post-link .by::before {
+                content: "✍️ ";
+                opacity: 0.8;
+            }
+            .post-link .go {
+                font-size: 0.8rem;
+                color: var(--gold, #e6c068);
+                border: 1px solid rgba(230, 192, 104, 0.35);
+                padding: 4px 12px;
+                border-radius: 999px;
+                white-space: nowrap;
+                transition: background 0.2s ease;
+            }
+            .post-link:hover .go {
+                background: rgba(230, 192, 104, 0.15);
+            }
+            .post-item.reveal {
+                opacity: 0;
+                transform: translateX(24px);
+                transition:
+                    opacity 0.55s ease,
+                    transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+            }
+            .post-item.reveal.visible {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            @media (prefers-reduced-motion: reduce) {
+                .post-item.reveal {
+                    opacity: 1;
+                    transform: none;
+                    transition: none;
+                }
+            }
+            @media (max-width: 600px) {
+                .post-link .go {
+                    display: none;
+                }
+            }
+            .empty {
+                color: var(--muted, #96a0b8);
+                text-align: center;
+                padding: 40px 0;
+            }
+        </style>
+    </head>
+
+    <body>
+        <canvas id="stars"></canvas>
+        <div class="glow g1"></div>
+        <div class="glow g2"></div>
+        <div class="glow g3"></div>
+        <div id="progress"></div>
+
+        <!-- 顶部导航 -->
+        <div class="topbar">
+            <a class="back" href="/">← 返回班史</a>
+            <span class="nav-tag">{SITE.className} · 班史列表</span>
+            <a class="back" href="/contribute">📝 投稿</a>
+        </div>
+
+        <div class="wrap">
+            <header class="post-head container">
+                <div class="post-date">CHRONICLE · ARCHIVE</div>
+                <h1>班史列表</h1>
+                <p class="post-sub">
+                    从初见的那一天起，每一段日子都有了名字 · 共 {total} 篇
+                </p>
+                <div class="head-line"></div>
+            </header>
+
+            <main class="container">
+                {
+                    items.length > 0 ? (
+                        <ol class="post-list">
+                            {items.map((p) => (
+                                <li class="post-item reveal">
+                                    <a class="post-link" href={p.url}>
+                                        <span class="no">
+                                            {String(p.index).padStart(2, "0")}
+                                        </span>
+                                        <div class="info">
+                                            <div class="date">{p.dateLabel}</div>
+                                            <div class="t">{p.title}</div>
+                                            {p.summary && (
+                                                <div class="s">{p.summary}</div>
+                                            )}
+                                            {p.author && (
+                                                <div class="by">{p.author}</div>
+                                            )}
+                                        </div>
+                                        <span class="go">查看 →</span>
+                                    </a>
+                                </li>
+                            ))}
+                        </ol>
+                    ) : (
+                        <p class="empty">班史还是空的，快去投稿吧～</p>
+                    )
+                }
+            </main>
+
+            <footer>
+                <div class="sig">{SITE.className} · 永远</div>
+                <p>愿我们都被世界温柔以待，也永远记得这间教室</p>
+                <p class="small">© {SITE.className}班史 · 制作于某个想起你们的夜晚</p>
+            </footer>
+        </div>
+
+        <button id="top" aria-label="回到顶部">↑</button>
+        <script is:inline src="/js/pages.js"></script>
+    </body>
+</html>

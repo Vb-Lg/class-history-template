@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#171b2b"/>
+      <stop offset="1" stop-color="#0d1020"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="500" fill="url(#g)"/>
+  <text x="600" y="245" text-anchor="middle" font-family="sans-serif" font-size="48" fill="#e6c068">封面占位图</text>
+  <text x="600" y="300" text-anchor="middle" font-family="sans-serif" font-size="22" fill="#96a0b8">把图片放到 public/pages/static/ 后替换本文件</text>
+</svg>

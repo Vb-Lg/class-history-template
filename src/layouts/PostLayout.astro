@@ -1,0 +1,193 @@
+---
+import { SITE } from "../site.config";
+
+interface Props {
+    entry: {
+        id: string;
+        data: {
+            title: string;
+            date: Date;
+            summary?: string;
+            author?: string;
+            cover?: string;
+        };
+    };
+    index: number;
+    total: number;
+    prev: { url: string; title: string } | null;
+    next: { url: string; title: string } | null;
+    rendered: {
+        Content: any;
+        headings: { depth: number; slug: string; text: string }[];
+    };
+}
+
+const { entry, index, total, prev, next, rendered } = Astro.props;
+const { Content } = rendered;
+const { title, date, summary, author, cover } = entry.data;
+
+const pad = (n: number) => String(n).padStart(2, '0');
+const dateLabel = `${date.getFullYear()} · ${pad(date.getMonth() + 1)} · ${pad(date.getDate())}`;
+const fullTitle = `${date.getFullYear()}·${pad(date.getMonth() + 1)}·${pad(date.getDate())} · ${SITE.className}班史`;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{fullTitle}</title>
+        <link rel="stylesheet" href="/css/pages.css" />
+    </head>
+
+    <body>
+        <canvas id="stars"></canvas>
+        <div class="glow g1"></div>
+        <div class="glow g2"></div>
+        <div class="glow g3"></div>
+        <div id="progress"></div>
+
+        <!-- 顶部导航 -->
+        <div class="topbar">
+            <a class="back" href="/">← 返回班史</a>
+            <span class="nav-tag">{SITE.className} · 班史</span>
+            <div class="topbar-actions">
+                <a class="back" href="/music">♫ 歌单</a>
+                <a class="back" href="/contribute">📝 投稿</a>
+            </div>
+        </div>
+
+        <div class="wrap">
+            <!-- ========== 文章头部 ========== -->
+            <header class="post-head container">
+                <div class="post-date">{dateLabel}</div>
+                <h1>{title}</h1>
+                {summary && <p class="post-sub">{summary}</p>}
+                <div class="post-meta">
+                    {author && <span>记录人 · {author}</span>}<i>·</i>
+                    <span>第 {String(index + 1).padStart(2, '0')} 篇</span>
+                    <i>·</i>
+                    <span>共 {total} 篇</span>
+                </div>
+                <div class="head-line"></div>
+            </header>
+
+            <!-- ========== 封面图 ========== -->
+            {
+                cover && (
+                    <div class="cover reveal">
+                        <img
+                            src={cover}
+                            class="ph"
+                            alt="封面"
+                            style="object-fit:cover;width:100%;height:100%;"
+                        />
+                    </div>
+                )
+            }
+
+            <!-- ========== 正文 ========== -->
+            <article class="container post-body">
+                <div class="prose">
+                    <Content />
+                </div>
+            </article>
+
+            <!-- ========== 上下篇 ========== -->
+            <div class="container">
+                <div class="post-nav reveal">
+                    <a href={prev ? prev.url : '/'}>
+                        <div class="label">← PREV</div>
+                        <div class="title">
+                            {prev ? prev.title : '返回班史首页'}
+                        </div>
+                    </a>
+                    {
+                        next ? (
+                            <a class="next" href={next.url}>
+                                <div class="label">NEXT →</div>
+                                <div class="title">{next.title}</div>
+                            </a>
+                        ) : (
+                            <span />
+                        )
+                    }
+                </div>
+            </div>
+
+            <!-- ========== 页脚 ========== -->
+            <footer>
+                <div class="sig">{SITE.className} · 永远</div>
+                <p>愿我们都被世界温柔以待，也永远记得这间教室</p>
+                <p class="small">© {SITE.className}班史 · 制作于某个想起你们的夜晚</p>
+            </footer>
+        </div>
+
+        <button id="top" aria-label="回到顶部">↑</button>
+        <script src="/js/pages.js" is:inline></script>
+    </body>
+</html>
+
+<style>
+    /* markdown 正文内的元素套用与 .post-body 一致的排版 */
+    .prose :global(p) {
+        margin: 0 0 22px;
+        font-size: 16.5px;
+        line-height: 1.95;
+        color: var(--text-dim);
+    }
+    .prose :global(strong) {
+        color: var(--gold-soft);
+    }
+    .prose :global(a) {
+        color: var(--gold-soft);
+        text-decoration: none;
+        border-bottom: 1px dashed rgba(212, 175, 55, 0.4);
+    }
+    .prose :global(a:hover) {
+        border-bottom-style: solid;
+    }
+    .prose :global(img) {
+        max-width: 100%;
+        border-radius: 12px;
+        margin: 10px 0;
+    }
+    .prose :global(ul) {
+        margin: 0 0 22px;
+        padding-left: 24px;
+    }
+    .prose :global(table) {
+        width: 100%;
+        margin: 0 0 22px;
+        border-collapse: collapse;
+        color: var(--text-dim);
+    }
+    .prose :global(th),
+    .prose :global(td) {
+        padding: 10px 14px;
+        border: 1px solid rgba(230, 192, 104, 0.2);
+        text-align: left;
+    }
+    .prose :global(th) {
+        color: var(--gold-soft);
+        background: rgba(230, 192, 104, 0.07);
+        font-weight: 600;
+    }
+    .prose :global(li) {
+        margin: 6px 0;
+        color: var(--text-dim);
+        line-height: 1.8;
+    }
+    .prose :global(details) {
+        background: var(--panel);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin: 0 0 22px;
+    }
+    .prose :global(summary) {
+        cursor: pointer;
+        color: var(--gold-soft);
+        font-weight: 600;
+    }
+</style>
