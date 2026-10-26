@@ -37,6 +37,11 @@ const fullTitle = `${date.getFullYear()}·${pad(date.getMonth() + 1)}·${pad(dat
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{fullTitle}</title>
+        {summary && <meta name="description" content={summary} />}
+        <meta property="og:title" content={fullTitle} />
+        {summary && <meta property="og:description" content={summary} />}
+        <meta property="og:type" content="article" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="stylesheet" href="/css/pages.css" />
     </head>
 

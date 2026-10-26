@@ -1,5 +1,10 @@
 /* ================= 星空背景 ================= */
 (function () {
+    // 用户偏好减少动态效果时不播星空，保留静态渐变背景
+    const reducedMotion = window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) return;
+
     const canvas = document.getElementById('stars');
     const ctx = canvas.getContext('2d');
     let w, h, stars = [], dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -44,11 +49,31 @@
 /* ================= 打字机 ================= */
 (function () {
     const el = document.getElementById('typed');
-    const lines = [
-        '我们的故事，从那年秋天开始',
-        '三年同窗，一生朋友',
-        '愿此去前程似锦，再相逢依然少年'
-    ];
+    // 句子由 src/site.config.ts 的 HOME.typedLines 注入（首页内联 JSON），保持单一定制入口
+    let lines = null;
+    try {
+        const src = document.getElementById('typed-lines');
+        if (src) {
+            const parsed = JSON.parse(src.textContent);
+            if (Array.isArray(parsed) && parsed.length && parsed.every(l => typeof l === 'string')) {
+                lines = parsed;
+            }
+        }
+    } catch (e) { /* 配置缺失时回退到内置句子 */ }
+    if (!lines) {
+        lines = [
+            '我们的故事，从那年秋天开始',
+            '三年同窗，一生朋友',
+            '愿此去前程似锦，再相逢依然少年'
+        ];
+    }
+    // 减少动态效果偏好：直接完整展示第一句，不做打字动画
+    const reducedMotion = window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducedMotion) {
+        el.textContent = lines[0];
+        return;
+    }
     let li = 0, ci = 0, deleting = false;
 
     function tick() {
@@ -262,11 +287,12 @@
             }
             return;
         } catch (err) {
-            btn.textContent = err.message && err.message.length <= 10 ? err.message : '发送失败';
+            // 接口返回的中文提示（如「发得太快啦，请等 X 秒」）直接展示，超长才降级
+            btn.textContent = err.message && err.message.length <= 30 ? err.message : '发送失败';
             setTimeout(() => {
                 btn.textContent = BTN_TEXT;
                 btn.disabled = false;
-            }, 1600);
+            }, 2400);
             sending = false;
             return;
         }

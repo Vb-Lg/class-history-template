@@ -131,7 +131,7 @@ function extFromMime(mime: string): string {
     if (m.includes('webp')) return 'webp';
     if (m.includes('gif')) return 'gif';
     if (m.includes('avif')) return 'avif';
-    if (m.includes('svg')) return 'svg';
+    // SVG 刻意不支持：内含的 <script> 在同源下会执行，属存储型 XSS
     return 'bin';
 }
 
@@ -274,7 +274,7 @@ async function handleSongSubmit(
     });
     if (!newCommit) throw new Error('创建 commit 失败');
 
-    const branch = `music/${ymd}-${Math.random().toString(36).slice(2, 7)}`;
+    const branch = `music/${ymd}-${crypto.randomUUID().slice(0, 8)}`;
     await api(`/repos/${owner}/${repo}/git/refs`, {
         method: 'POST',
         body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: newCommit.sha }),
@@ -315,6 +315,11 @@ async function handleSongSubmit(
 }
 
 // ---------- 主处理 ----------
+// 简单限流：同一 IP 两次投稿的最小间隔（秒）。只存在于当前 isolate 的内存里，
+// 属尽力而为；更严格的限流应另配 Cloudflare 的 WAF rate limiting 规则。
+const SUBMIT_COOLDOWN = 60;
+const lastSubmitAt = new Map<string, number>();
+
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     const json = (data: unknown, status = 200) =>
         new Response(JSON.stringify(data), {
@@ -323,6 +328,26 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         });
 
     const meta = requestMeta(request);
+
+    const submitIp = meta.ip;
+    if (submitIp) {
+        const last = lastSubmitAt.get(submitIp);
+        const now = Math.floor(Date.now() / 1000);
+        if (last !== undefined && now - last < SUBMIT_COOLDOWN) {
+            return json(
+                { error: `投稿太频繁啦，请等 ${SUBMIT_COOLDOWN - (now - last)} 秒` },
+                429,
+            );
+        }
+        lastSubmitAt.set(submitIp, now);
+        // 只保留最近 1000 个 IP，防 Map 无限增长
+        if (lastSubmitAt.size > 1000) {
+            for (const k of lastSubmitAt.keys()) {
+                lastSubmitAt.delete(k);
+                if (lastSubmitAt.size <= 500) break;
+            }
+        }
+    }
 
     try {
         // 1) 解析 multipart
@@ -384,7 +409,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
         if (cover instanceof File && cover.size > 0) {
             if (cover.size > 5 * 1024 * 1024) return json({ error: '封面图超过 5 MB' }, 413);
-            if (!cover.type.startsWith('image/')) return json({ error: '封面必须是图片' }, 400);
+            if (!cover.type.startsWith('image/') || cover.type.includes('svg')) {
+                return json({ error: '封面必须是 PNG/JPG/WebP/GIF/AVIF 图片' }, 400);
+            }
 
             const ext = extFromMime(cover.type);
             const base = `${yyyymmdd(date)}-cover`;
@@ -395,16 +422,13 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
             coverBlob = { content: abToBase64(buf), encoding: 'base64' };
         }
 
-        // 3) 决定文章文件名（同日冲突 → -1, -2, …）
+        // 3) 决定文章文件名：优先用日期；已被占用（同日已有投稿）时退回
+        //    日期-随机后缀，避免「先探测再提交」的竞态导致两个并发投稿撞名
         let articleName = `${yyyymmdd(date)}.md`;
         let articlePath = `${contentDir}/${articleName}`;
-        let n = 0;
-        // 注意：Contents API 的 GET 返回 404 表示不存在；gh() 已把 404 转成 null
-        while (await api(`/repos/${owner}/${repo}/contents/${encodeURIComponent(articlePath)}?ref=${baseBranch}`)) {
-            n += 1;
-            articleName = `${yyyymmdd(date)}-${n}.md`;
+        if (await api(`/repos/${owner}/${repo}/contents/${encodeURIComponent(articlePath)}?ref=${baseBranch}`)) {
+            articleName = `${yyyymmdd(date)}-${Math.random().toString(36).slice(2, 8)}.md`;
             articlePath = `${contentDir}/${articleName}`;
-            if (n > 50) return json({ error: '同日投稿过多' }, 409);
         }
 
         const markdown = renderMarkdown({
@@ -467,7 +491,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         });
         if (!newCommit) throw new Error('创建 commit 失败');
 
-        const branch = `chronicle/${yyyymmdd(date)}-${Math.random().toString(36).slice(2, 7)}`;
+        const branch = `chronicle/${yyyymmdd(date)}-${crypto.randomUUID().slice(0, 8)}`;
         await api(`/repos/${owner}/${repo}/git/refs`, {
             method: 'POST',
             body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: newCommit.sha }),

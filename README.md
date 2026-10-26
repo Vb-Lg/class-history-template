@@ -44,10 +44,8 @@ npm run dev        # http://localhost:4321
 
 ## 定制班级信息
 
-1. **`src/site.config.ts`**：班级名、顶栏 logo、首屏徽章、统计数字，改这一个文件即可。
-2. **`src/pages/index.astro`**：班级简介、人物志、荣誉、记忆墙的示例文案（搜索 `20XX` 和各区块的中文示例）。
-3. **`public/js/index.js`**：首屏打字机轮播文案（`lines` 数组）。
-4. 主题色（金色 `#e6c068`）在 `public/css/*.css` 中定义。
+1. **`src/site.config.ts`**：班级名、顶栏 logo、首屏徽章、统计数字，以及首页各区块文案（`HOME`：班级简介、人物志、荣誉、记忆墙、打字机句子、SEO 描述），改这一个文件即可。
+2. 主题色（金色 `#e6c068`）在 `public/css/*.css` 中定义。
 
 ## 内容格式
 

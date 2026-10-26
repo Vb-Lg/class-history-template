@@ -1,0 +1,77 @@
+---
+import { SITE } from "../site.config";
+// Cloudflare Pages 会自动把构建产物里的 404.html 用作未匹配路由的兜底页
+---
+
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>页面不存在 · {SITE.className}班史</title>
+        <meta name="robots" content="noindex" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="stylesheet" href="/css/pages.css" />
+        <style>
+            .nf {
+                text-align: center;
+                padding: 80px 0 40px;
+            }
+            .nf-code {
+                font-size: 5rem;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                color: var(--gold, #e6c068);
+                text-shadow: 0 0 40px rgba(230, 192, 104, 0.35);
+            }
+            .nf-text {
+                margin-top: 10px;
+                color: var(--muted, #96a0b8);
+            }
+            .nf-actions {
+                margin-top: 30px;
+                display: flex;
+                gap: 12px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .nf-actions a {
+                color: var(--gold, #e6c068);
+                text-decoration: none;
+                border: 1px solid rgba(230, 192, 104, 0.35);
+                padding: 8px 20px;
+                border-radius: 999px;
+                transition: background 0.2s ease;
+            }
+            .nf-actions a:hover {
+                background: rgba(230, 192, 104, 0.12);
+            }
+        </style>
+    </head>
+
+    <body>
+        <canvas id="stars"></canvas>
+        <div class="glow g1"></div>
+        <div class="glow g2"></div>
+        <div class="glow g3"></div>
+
+        <div class="wrap">
+            <div class="nf container reveal">
+                <div class="nf-code">404</div>
+                <p class="nf-text">这一页还没被写进班史。</p>
+                <div class="nf-actions">
+                    <a href="/">← 返回首页</a>
+                    <a href="/chronicle">📖 班史列表</a>
+                    <a href="/music">♫ 歌单</a>
+                </div>
+            </div>
+
+            <footer>
+                <div class="sig">{SITE.className} · 永远</div>
+                <p class="small">© {SITE.className}班史 · 制作于某个想起你们的夜晚</p>
+            </footer>
+        </div>
+
+        <script is:inline src="/js/pages.js"></script>
+    </body>
+</html>

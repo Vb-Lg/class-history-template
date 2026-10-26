@@ -11,7 +11,9 @@ const hasTurnstile = turnstileSiteKey.length > 0;
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>班史投稿</title>
+        <title>班史投稿 · {SITE.className}</title>
+        <meta property="og:title" content={`班史投稿 · ${SITE.className}`} />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         {
             hasTurnstile && (
                 <script

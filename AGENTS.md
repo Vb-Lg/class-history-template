@@ -10,7 +10,7 @@
 
 ## 结构速览
 
-- `src/site.config.ts`：班级信息占位值，各页面引用
+- `src/site.config.ts`：班级信息占位值（`SITE`）与首页各区块文案占位值（`HOME`：简介、人物志、荣誉、记忆墙、打字机句子），各页面引用
 - 示例内容（使用者应删除）：`src/content/20250101.md`、`src/songs/20250101-example.json`；`public/pages/static/cover-placeholder.svg` 为占位封面
 - `functions/api/submit.ts`：投稿 → GitHub App（cms-bot，见 Wiki）建分支开 PR；`functions/api/messages.js`：留言墙（D1，绑定名 `DB`）
 - 构建：Node ≥ 22.12，`npm run build`；本地 `npm run dev` 没有 `/api/*`

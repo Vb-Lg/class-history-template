@@ -17,11 +17,7 @@ function json(data, status = 200) {
     status,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-      // 如果前端和接口不同域，可加上 CORS 头；同域可删掉
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Cache-Control': 'no-store'
     }
   });
 }
@@ -53,6 +49,8 @@ const SCHEMA_SQL = [
      country    TEXT,
      created_at INTEGER NOT NULL
    )`,
+  'CREATE INDEX IF NOT EXISTS idx_messages_ip ON messages(ip)',
+  'CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at)',
   'ALTER TABLE messages ADD COLUMN ua TEXT',
   'ALTER TABLE messages ADD COLUMN country TEXT',
 ];
@@ -76,19 +74,6 @@ function ensureSchema(env) {
     });
   }
   return schemaPromise;
-}
-
-/* ---------- OPTIONS（预检） ---------- */
-export async function onRequestOptions() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400'
-    }
-  });
 }
 
 /* ---------- GET：拉取列表 ---------- */

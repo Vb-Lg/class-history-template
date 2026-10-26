@@ -1,14 +1,19 @@
 ---
 // 文章列表已移至 /chronicle（班史列表页），首页编年史区块留空
-import { SITE } from "../site.config";
+import { SITE, HOME } from "../site.config";
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{SITE.className} · 班史</title>
+        <meta name="description" content={HOME.description} />
+        <meta property="og:title" content={`${SITE.className} · 班史`} />
+        <meta property="og:description" content={HOME.description} />
+        <meta property="og:type" content="website" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="stylesheet" href="/css/index.css" />
     </head>
 
@@ -53,13 +58,7 @@ import { SITE } from "../site.config";
                             <h2 class="sec-title">
                                 一间教室，<em>三年光阴</em>
                             </h2>
-                            <p>
-                                那年秋天，几十个互不相识的名字被写进同一张座位表。风扇转过无数个燥热的午后，黑板擦落下的粉笔灰在阳光里飘成一场小雪。我们从陌生到熟悉，从并肩到并肩。
-                            </p>
-                            <p>
-                                这里有早读时此起彼伏的背书声，有课间十分钟的喧闹与追逐，有考试前互相打气的纸条，也有晚自习窗外那片被灯光照亮的夜色。这些琐碎的日常，后来都成了我们回不去的黄金时代。
-                            </p>
-                            <p>谨以此页，记录 {SITE.className} 走过的每一步。</p>
+                            {HOME.intro.map((para) => <p>{para}</p>)}
                         </div>
                         <div class="stats reveal">
                             <div class="stat">
@@ -88,7 +87,6 @@ import { SITE } from "../site.config";
                             从初见的那一天起，每一段日子都有了名字。
                         </p>
                     </div>
-                    <!-- 文章列表已移至 /chronicle，此处留空 -->
                     <div class="timeline"></div>
                 </div>
             </section>
@@ -102,42 +100,14 @@ import { SITE } from "../site.config";
                     </div>
 
                     <div class="people">
-                        <div class="person reveal">
-                            <div class="avatar">👑</div>
-                            <h3>班长</h3>
-                            <div class="role">CAPTAIN</div>
-                            <p class="quote">"都安静一下，我说个事儿。"</p>
-                        </div>
-                        <div class="person reveal">
-                            <div class="avatar">📚</div>
-                            <h3>学习委员</h3>
-                            <div class="role">STUDY</div>
-                            <p class="quote">"作业收一下，最后一排。"</p>
-                        </div>
-                        <div class="person reveal">
-                            <div class="avatar">🏃</div>
-                            <h3>体育委员</h3>
-                            <div class="role">SPORTS</div>
-                            <p class="quote">"集合！快点儿，别磨蹭！"</p>
-                        </div>
-                        <div class="person reveal">
-                            <div class="avatar">🎨</div>
-                            <h3>文艺委员</h3>
-                            <div class="role">ART</div>
-                            <p class="quote">"这次板报，我们拿第一。"</p>
-                        </div>
-                        <div class="person reveal">
-                            <div class="avatar">🧹</div>
-                            <h3>劳动委员</h3>
-                            <div class="role">DUTY</div>
-                            <p class="quote">"今天值日的是第三组，别忘了。"</p>
-                        </div>
-                        <div class="person reveal">
-                            <div class="avatar">📣</div>
-                            <h3>宣传委员</h3>
-                            <div class="role">MEDIA</div>
-                            <p class="quote">"照片我都存着呢，一张没删。"</p>
-                        </div>
+                        {HOME.people.map((p) => (
+                            <div class="person reveal">
+                                <div class="avatar">{p.avatar}</div>
+                                <h3>{p.title}</h3>
+                                <div class="role">{p.role}</div>
+                                <p class="quote">"{p.quote}"</p>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>
@@ -150,48 +120,15 @@ import { SITE } from "../site.config";
                         <p class="sec-desc">属于我们共同的勋章。</p>
                     </div>
                     <div class="honors">
-                        <div class="honor reveal">
-                            <div class="medal">🏆</div>
-                            <div>
-                                <h4>校运动会团体总分第一</h4>
-                                <p>20XX · 秋季运动会</p>
+                        {HOME.honors.map((h) => (
+                            <div class="honor reveal">
+                                <div class="medal">{h.medal}</div>
+                                <div>
+                                    <h4>{h.title}</h4>
+                                    <p>{h.detail}</p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="honor reveal">
-                            <div class="medal">🥇</div>
-                            <div>
-                                <h4>优秀班集体</h4>
-                                <p>20XX—20XX 学年</p>
-                            </div>
-                        </div>
-                        <div class="honor reveal">
-                            <div class="medal">🎭</div>
-                            <div>
-                                <h4>校园艺术节最佳创意奖</h4>
-                                <p>20XX · 元旦汇演</p>
-                            </div>
-                        </div>
-                        <div class="honor reveal">
-                            <div class="medal">📖</div>
-                            <div>
-                                <h4>经典诵读比赛一等奖</h4>
-                                <p>20XX · 读书节</p>
-                            </div>
-                        </div>
-                        <div class="honor reveal">
-                            <div class="medal">🏀</div>
-                            <div>
-                                <h4>年级篮球赛亚军</h4>
-                                <p>20XX · 春季</p>
-                            </div>
-                        </div>
-                        <div class="honor reveal">
-                            <div class="medal">⭐</div>
-                            <div>
-                                <h4>文明班级 · 三连冠</h4>
-                                <p>连续三个学期</p>
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 </div>
             </section>
@@ -207,14 +144,9 @@ import { SITE } from "../site.config";
                         </p>
                     </div>
                     <div class="gallery">
-                        <div class="photo reveal"><span>开学第一天</span></div>
-                        <div class="photo reveal"><span>运动会合影</span></div>
-                        <div class="photo reveal"><span>元旦晚会</span></div>
-                        <div class="photo reveal"><span>研学路上</span></div>
-                        <div class="photo reveal"><span>教室里</span></div>
-                        <div class="photo reveal"><span>黑板的字</span></div>
-                        <div class="photo reveal"><span>操场黄昏</span></div>
-                        <div class="photo reveal"><span>毕业照</span></div>
+                        {HOME.gallery.map((label) => (
+                            <div class="photo reveal"><span>{label}</span></div>
+                        ))}
                     </div>
                 </div>
             </section>
@@ -251,6 +183,11 @@ import { SITE } from "../site.config";
         </div>
         <button id="top" aria-label="回到顶部">↑</button>
         <!-- <Footer /> -->
+        <script
+            type="application/json"
+            id="typed-lines"
+            set:html={JSON.stringify(HOME.typedLines).replace(/</g, "\\u003c")}
+        />
         <script src="/js/index.js" is:inline></script>
     </body>
 </html>

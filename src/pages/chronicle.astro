@@ -32,6 +32,13 @@ const items = posts
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>班史列表 · {SITE.className}</title>
+        <meta
+            name="description"
+            content={`${SITE.className}班史全部文章的归档列表，按时间倒序排列。`}
+        />
+        <meta property="og:title" content={`班史列表 · ${SITE.className}`} />
+        <meta property="og:type" content="website" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="stylesheet" href="/css/pages.css" />
         <style>
             .post-list {
